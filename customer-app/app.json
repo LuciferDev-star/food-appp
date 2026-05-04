@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "FoodCustomerApp",
+    "slug": "foodapp",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "scheme": "foodcustomerapp",
+
+    "android": {
+      "package": "com.foodcustomerapp",
+      "usesCleartextTraffic": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "7d103149-00f1-44d1-a3d0-e95083a2f059"
+      }
+    },
+
+    "owner": "luciferdevstart"
+  }
+}
