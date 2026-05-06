@@ -12,12 +12,13 @@ const STATUS_CONFIG = {
   pending: { label: 'Pending', color: '#F59E0B', bg: '#FFFBEB', icon: '⏳' },
   confirmed: { label: 'Confirmed', color: '#3B82F6', bg: '#EFF6FF', icon: '✅' },
   preparing: { label: 'Preparing', color: '#8B5CF6', bg: '#F5F3FF', icon: '🍳' },
-  out_for_delivery: { label: 'Out for Delivery', color: '#FF6B35', bg: '#FFF0E8', icon: '🛵' },
+  out_for_delivery: { label: 'Out of Delivery', color: '#FF6B35', bg: '#FFF0E8', icon: '🛵' },
   delivered: { label: 'Delivered', color: '#22C55E', bg: '#F0FDF4', icon: '🎉' },
   cancelled: { label: 'Cancelled', color: '#EF4444', bg: '#FEF2F2', icon: '❌' },
 };
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
+const ORDER_STATUSES = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'];
 
 const EMPTY_MENU_FORM = {
   name: '',
@@ -90,21 +91,22 @@ function SectionCard({ title, subtitle, actions, children }) {
       boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
       marginBottom: 20,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
         <div>
           <h3 style={{ fontSize: 22, color: '#1A1A2E' }}>{title}</h3>
           {subtitle && <p style={{ marginTop: 6, color: '#888', fontSize: 14 }}>{subtitle}</p>}
         </div>
-        {actions}
+        {actions ? <div style={{ marginLeft: 'auto', maxWidth: '100%', overflowX: 'auto' }}>{actions}</div> : null}
       </div>
       {children}
     </div>
   );
 }
 
-function OrderCard({ order, onStatusChange, accentColor }) {
+function OrderCard({ order, onStatusChange, accentColor, isCompact }) {
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(order.status);
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const currentIdx = STATUS_FLOW.indexOf(order.status);
   const nextStatus = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1
@@ -125,6 +127,17 @@ function OrderCard({ order, onStatusChange, accentColor }) {
     setUpdating(false);
   };
 
+  const handleStatusSelectUpdate = async () => {
+    if (!selectedStatus || selectedStatus === order.status) return;
+    setUpdating(true);
+    await onStatusChange(order._id, selectedStatus);
+    setUpdating(false);
+  };
+
+  useEffect(() => {
+    setSelectedStatus(order.status);
+  }, [order.status]);
+
   return (
     <div style={{
       background: '#fff',
@@ -135,10 +148,18 @@ function OrderCard({ order, onStatusChange, accentColor }) {
       overflow: 'hidden',
     }}>
       <div
-        style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        style={{
+          padding: '16px 20px',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: isCompact ? 'flex-start' : 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
         onClick={() => setExpanded(!expanded)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
           <div style={{
             width: 44,
             height: 44,
@@ -161,9 +182,9 @@ function OrderCard({ order, onStatusChange, accentColor }) {
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: isCompact ? 60 : 0, flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 800, fontSize: 18, color: accentColor, fontFamily: 'Syne, sans-serif' }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: accentColor, fontFamily: 'Syne, sans-serif', whiteSpace: 'nowrap' }}>
               ₹{order.totalAmount}
             </div>
             <div style={{ fontSize: 11, color: order.paymentStatus === 'paid' ? '#22C55E' : '#F59E0B', fontWeight: 600, marginTop: 2 }}>
@@ -261,8 +282,44 @@ function OrderCard({ order, onStatusChange, accentColor }) {
             <span style={{ fontWeight: 800, fontSize: 18, color: accentColor }}>₹{order.totalAmount}</span>
           </div>
 
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              style={{
+                borderRadius: 10,
+                border: '1px solid #DDD',
+                padding: '10px 12px',
+                minWidth: isCompact ? '100%' : 220,
+                background: '#fff',
+              }}
+            >
+              {ORDER_STATUSES.map((statusKey) => (
+                <option key={statusKey} value={statusKey}>
+                  {STATUS_CONFIG[statusKey]?.label || statusKey}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleStatusSelectUpdate}
+              disabled={updating || selectedStatus === order.status}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: `1px solid ${accentColor}`,
+                background: selectedStatus === order.status ? '#F8F8F8' : `${accentColor}14`,
+                color: selectedStatus === order.status ? '#999' : accentColor,
+                fontWeight: 700,
+                cursor: selectedStatus === order.status ? 'not-allowed' : 'pointer',
+                width: isCompact ? '100%' : 'auto',
+              }}
+            >
+              Set Status
+            </button>
+          </div>
+
           {order.status !== 'delivered' && order.status !== 'cancelled' && (
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {nextStatus && (
                 <button
                   onClick={handleAdvance}
@@ -297,6 +354,7 @@ function OrderCard({ order, onStatusChange, accentColor }) {
                   fontSize: 14,
                   cursor: 'pointer',
                   opacity: updating ? 0.7 : 1,
+                  width: isCompact ? '100%' : 'auto',
                 }}
               >
                 Cancel
@@ -394,6 +452,8 @@ const uploadPanelStyle = {
 };
 
 export default function App() {
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const [activeView, setActiveView] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -413,6 +473,18 @@ export default function App() {
   const prevCountRef = React.useRef(0);
 
   const accentColor = settingsForm.accentColor || '#FF6B35';
+  const isDesktop = viewportWidth >= 1024;
+  const isCompact = viewportWidth < 768;
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isDesktop) setIsNavOpen(false);
+  }, [isDesktop]);
 
   const fetchOrders = useCallback(async (silent = false) => {
     try {
@@ -628,11 +700,47 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {!isDesktop && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 68,
+          background: '#1A1A2E',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          zIndex: 120,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+        }}>
+          <button
+            type="button"
+            onClick={() => setIsNavOpen((open) => !open)}
+            style={{
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'transparent',
+              color: '#fff',
+              borderRadius: 10,
+              padding: '8px 10px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            ☰ Menu
+          </button>
+          <div style={{ color: '#fff', fontWeight: 800, fontSize: 18, fontFamily: 'Syne, sans-serif' }}>
+            {settingsForm.appName || 'FoodApp'}
+          </div>
+        </div>
+      )}
+
       {notification && (
         <div style={{
           position: 'fixed',
-          top: 24,
-          right: 24,
+          top: isDesktop ? 24 : 84,
+          right: isDesktop ? 24 : 12,
           zIndex: 1000,
           background: '#1A1A2E',
           color: '#fff',
@@ -643,22 +751,25 @@ export default function App() {
           boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           animation: 'fadeIn 0.3s ease',
           borderLeft: `4px solid ${accentColor}`,
+          maxWidth: isDesktop ? 380 : 'calc(100% - 24px)',
         }}>
           {notification}
         </div>
       )}
 
       <div style={{
-        position: 'fixed',
+        position: isDesktop ? 'fixed' : 'fixed',
         left: 0,
-        top: 0,
+        top: isDesktop ? 0 : 68,
         bottom: 0,
         width: 260,
         background: '#1A1A2E',
         display: 'flex',
         flexDirection: 'column',
         padding: '24px 0',
-        zIndex: 100,
+        zIndex: 115,
+        transform: isDesktop ? 'translateX(0)' : (isNavOpen ? 'translateX(0)' : 'translateX(-100%)'),
+        transition: 'transform 0.25s ease',
       }}>
         <div style={{ padding: '0 24px 32px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -687,7 +798,10 @@ export default function App() {
         ].map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveView(item.id)}
+            onClick={() => {
+              setActiveView(item.id);
+              setIsNavOpen(false);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -743,12 +857,30 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ marginLeft: 260, padding: '32px 32px 40px' }}>
+      {!isDesktop && isNavOpen && (
+        <div
+          onClick={() => setIsNavOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 68,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.25)',
+            zIndex: 110,
+          }}
+        />
+      )}
+
+      <div style={{
+        marginLeft: isDesktop ? 260 : 0,
+        padding: isDesktop ? '32px 32px 40px' : '84px 14px 28px',
+      }}>
         {activeView === 'orders' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
               <div>
-                <h1 style={{ fontSize: 30, fontWeight: 800, color: '#1A1A2E' }}>
+                <h1 style={{ fontSize: isCompact ? 25 : 30, fontWeight: 800, color: '#1A1A2E' }}>
                   {filter === 'all' ? 'All Orders' : STATUS_CONFIG[filter]?.label || filter}
                 </h1>
                 <p style={{ color: '#888', marginTop: 4, fontSize: 14 }}>
@@ -790,7 +922,7 @@ export default function App() {
                     { id: 'pending', label: 'Pending' },
                     { id: 'confirmed', label: 'Confirmed' },
                     { id: 'preparing', label: 'Preparing' },
-                    { id: 'out_for_delivery', label: 'Out for Delivery' },
+                    { id: 'out_for_delivery', label: 'Out of Delivery' },
                     { id: 'delivered', label: 'Delivered' },
                     { id: 'cancelled', label: 'Cancelled' },
                   ].map((item) => (
@@ -821,7 +953,7 @@ export default function App() {
                 </div>
               ) : (
                 filteredOrders.map((order) => (
-                  <OrderCard key={order._id} order={order} onStatusChange={handleStatusChange} accentColor={accentColor} />
+                  <OrderCard key={order._id} order={order} onStatusChange={handleStatusChange} accentColor={accentColor} isCompact={isCompact} />
                 ))
               )}
             </SectionCard>
@@ -830,9 +962,9 @@ export default function App() {
 
         {activeView === 'menu' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
               <div>
-                <h1 style={{ fontSize: 30, fontWeight: 800, color: '#1A1A2E' }}>Menu Manager</h1>
+                <h1 style={{ fontSize: isCompact ? 25 : 30, fontWeight: 800, color: '#1A1A2E' }}>Menu Manager</h1>
                 <p style={{ color: '#888', marginTop: 4, fontSize: 14 }}>
                   Add items from admin and they will reflect in the customer app.
                 </p>
@@ -963,9 +1095,9 @@ export default function App() {
 
         {activeView === 'branding' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
               <div>
-                <h1 style={{ fontSize: 30, fontWeight: 800, color: '#1A1A2E' }}>Brand Settings</h1>
+                <h1 style={{ fontSize: isCompact ? 25 : 30, fontWeight: 800, color: '#1A1A2E' }}>Brand Settings</h1>
                 <p style={{ color: '#888', marginTop: 4, fontSize: 14 }}>
                   Change the customer-facing logo and brand name from the admin panel.
                 </p>
@@ -989,7 +1121,7 @@ export default function App() {
 
             <SectionCard title="Branding" subtitle="These values are used by the admin portal and customer app.">
               <form onSubmit={handleSaveSettings}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: 24, alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, alignItems: 'start' }}>
                   <div>
                     <div style={{ marginBottom: 14 }}>
                       <label style={{ display: 'block', marginBottom: 6, fontWeight: 700 }}>App Name</label>
