@@ -35,6 +35,8 @@ const DEFAULT_SETTINGS = {
   appName: 'FoodApp',
   logoUrl: '',
   accentColor: '#FF6B35',
+  isShopOpen: true,
+  shopUnavailableMessage: 'Shops are unavailable right now.',
 };
 
 export default function HomeScreen({ navigation }) {
@@ -47,6 +49,7 @@ export default function HomeScreen({ navigation }) {
   const { cart, count, dispatch } = useCart();
 
   const brandColor = settings.accentColor || DEFAULT_SETTINGS.accentColor;
+  const isShopOpen = settings.isShopOpen !== false;
 
   const fetchHomeData = useCallback(async () => {
     try {
@@ -255,7 +258,14 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.listWrap}>
-        {loading && menu.length === 0 ? (
+        {!isShopOpen ? (
+          <View style={styles.unavailableState}>
+            <Text style={styles.unavailableTitle}>Shop Unavailable</Text>
+            <Text style={styles.unavailableSubtitle}>
+              {settings.shopUnavailableMessage || DEFAULT_SETTINGS.shopUnavailableMessage}
+            </Text>
+          </View>
+        ) : loading && menu.length === 0 ? (
           <ActivityIndicator size="large" color={brandColor} style={styles.listLoader} />
         ) : (
           <FlatList
@@ -280,7 +290,7 @@ export default function HomeScreen({ navigation }) {
         )}
       </View>
 
-      {count > 0 && (
+      {count > 0 && isShopOpen && (
         <TouchableOpacity
           style={[styles.floatingCart, { backgroundColor: brandColor }]}
           onPress={() => navigation.navigate('Cart')}
@@ -468,4 +478,28 @@ const styles = StyleSheet.create({
   emptyState: { paddingVertical: 48, paddingHorizontal: 24, alignItems: 'center' },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 8 },
   emptySubtitle: { fontSize: 14, color: '#666', textAlign: 'center', maxWidth: 280 },
+  unavailableState: {
+    marginHorizontal: 18,
+    marginTop: 10,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0E8E0',
+    paddingVertical: 28,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  unavailableTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    marginBottom: 8,
+  },
+  unavailableSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    maxWidth: 300,
+    lineHeight: 21,
+  },
 });
