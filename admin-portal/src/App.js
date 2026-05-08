@@ -837,7 +837,29 @@ export default function App() {
           </button>
         ))}
 
-        <div style={{ marginTop: 'auto', padding: '0 24px' }}>
+        <div style={{ marginTop: 'auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 16px' }}>
+            <div style={{ fontSize: 13, color: '#8A8FA8', marginBottom: 8 }}>Shop Availability</div>
+            <button
+              type="button"
+              onClick={handleToggleShopAvailability}
+              disabled={savingSettings}
+              style={{
+                width: '100%',
+                border: 'none',
+                borderRadius: 10,
+                padding: '10px 12px',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: settingsForm.isShopOpen ? '#22C55E' : '#EF4444',
+                opacity: savingSettings ? 0.7 : 1,
+              }}
+            >
+              {settingsForm.isShopOpen ? 'Shop Available' : 'Shop Currently Unavailable'}
+            </button>
+          </div>
+
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13, color: '#8A8FA8' }}>Live Updates</span>
@@ -1185,29 +1207,6 @@ export default function App() {
                         placeholder="Shops are unavailable right now."
                         style={textInputStyle}
                       />
-                    </div>
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontWeight: 700, marginBottom: 8 }}>Shop Availability</div>
-                      <button
-                        type="button"
-                        onClick={handleToggleShopAvailability}
-                        disabled={savingSettings}
-                        style={{
-                          border: 'none',
-                          borderRadius: 12,
-                          padding: '12px 16px',
-                          color: '#fff',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: settingsForm.isShopOpen ? '#EF4444' : '#22C55E',
-                          opacity: savingSettings ? 0.7 : 1,
-                        }}
-                      >
-                        {settingsForm.isShopOpen ? 'Set Shop Unavailable' : 'Set Shop Available'}
-                      </button>
-                      <div style={{ marginTop: 8, fontSize: 13, color: settingsForm.isShopOpen ? '#22C55E' : '#EF4444' }}>
-                        Current status: {settingsForm.isShopOpen ? 'Available for customer orders' : 'Unavailable in customer app'}
-                      </div>
                     </div>
                     <button
                       type="submit"
