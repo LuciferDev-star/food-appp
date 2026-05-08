@@ -684,13 +684,23 @@ export default function App() {
   };
 
   const handleToggleShopAvailability = async () => {
+    const nextIsShopOpen = !settingsForm.isShopOpen;
+    const previousSettings = settingsForm;
+    setSettingsForm((current) => ({ ...current, isShopOpen: nextIsShopOpen }));
+
     try {
       setSavingSettings(true);
       const { data } = await axios.patch(`${API_BASE}/settings`, {
-        isShopOpen: !settingsForm.isShopOpen,
+        isShopOpen: nextIsShopOpen,
       });
-      setSettingsForm({ ...EMPTY_SETTINGS, ...data });
+      setSettingsForm((current) => ({
+        ...EMPTY_SETTINGS,
+        ...current,
+        ...data,
+        isShopOpen: data?.isShopOpen ?? nextIsShopOpen,
+      }));
     } catch (err) {
+      setSettingsForm(previousSettings);
       alert(err.response?.data?.error || 'Failed to update shop availability');
     } finally {
       setSavingSettings(false);
