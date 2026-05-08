@@ -33,6 +33,8 @@ const EMPTY_SETTINGS = {
   appName: 'FoodApp',
   logoUrl: '',
   accentColor: '#FF6B35',
+  isShopOpen: true,
+  shopUnavailableMessage: 'Shops are unavailable right now.',
 };
 
 function timeAgo(date) {
@@ -681,6 +683,20 @@ export default function App() {
     }
   };
 
+  const handleToggleShopAvailability = async () => {
+    try {
+      setSavingSettings(true);
+      const { data } = await axios.patch(`${API_BASE}/settings`, {
+        isShopOpen: !settingsForm.isShopOpen,
+      });
+      setSettingsForm({ ...EMPTY_SETTINGS, ...data });
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update shop availability');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const filteredOrders = filter === 'all' ? orders : orders.filter((order) => order.status === filter);
 
   const stats = {
@@ -1160,6 +1176,38 @@ export default function App() {
                     <div style={{ marginBottom: 20 }}>
                       <label style={{ display: 'block', marginBottom: 6, fontWeight: 700 }}>Accent Color</label>
                       <input value={settingsForm.accentColor} onChange={(e) => setSettingsForm({ ...settingsForm, accentColor: e.target.value })} placeholder="#FF6B35" style={textInputStyle} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: 'block', marginBottom: 6, fontWeight: 700 }}>Unavailable Message</label>
+                      <input
+                        value={settingsForm.shopUnavailableMessage || ''}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, shopUnavailableMessage: e.target.value })}
+                        placeholder="Shops are unavailable right now."
+                        style={textInputStyle}
+                      />
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 8 }}>Shop Availability</div>
+                      <button
+                        type="button"
+                        onClick={handleToggleShopAvailability}
+                        disabled={savingSettings}
+                        style={{
+                          border: 'none',
+                          borderRadius: 12,
+                          padding: '12px 16px',
+                          color: '#fff',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: settingsForm.isShopOpen ? '#EF4444' : '#22C55E',
+                          opacity: savingSettings ? 0.7 : 1,
+                        }}
+                      >
+                        {settingsForm.isShopOpen ? 'Set Shop Unavailable' : 'Set Shop Available'}
+                      </button>
+                      <div style={{ marginTop: 8, fontSize: 13, color: settingsForm.isShopOpen ? '#22C55E' : '#EF4444' }}>
+                        Current status: {settingsForm.isShopOpen ? 'Available for customer orders' : 'Unavailable in customer app'}
+                      </div>
                     </div>
                     <button
                       type="submit"
