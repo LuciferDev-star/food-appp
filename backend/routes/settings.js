@@ -26,6 +26,8 @@ router.patch('/', async (req, res) => {
       appName: req.body.appName,
       logoUrl: req.body.logoUrl,
       accentColor: req.body.accentColor,
+      isShopOpen: req.body.isShopOpen,
+      shopUnavailableMessage: req.body.shopUnavailableMessage,
     };
 
     Object.keys(updates).forEach((key) => {
